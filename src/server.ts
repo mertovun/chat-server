@@ -16,6 +16,11 @@ const server = app.listen(port, () =>
 
 const io = socketio(server);
 
-io.on('connect', (socket) => {
-  console.log('connection');
+io.on('connection', (socket) => {
+  console.log('connection - socket id ' + socket.id);
+
+  socket.emit('greetings', { data: 'helloooo from server' });
+  socket.on('greetings', (data: any) => {
+    console.log(data);
+  });
 });

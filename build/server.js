@@ -13,6 +13,10 @@ var server = app.listen(port, function () {
     return console.log("Listening at http://localhost:" + port);
 });
 var io = socket_io_1.default(server);
-io.on('connect', function (socket) {
-    console.log('connection');
+io.on('connection', function (socket) {
+    console.log('connection - socket id ' + socket.id);
+    socket.emit('greetings', { data: 'helloooo from server' });
+    socket.on('greetings', function (data) {
+        console.log(data);
+    });
 });
