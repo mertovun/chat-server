@@ -1,0 +1,7 @@
+export enum EventTypes {
+  ROOM_CREATED = 'ROOM_CREATED',
+  MESSAGE_RECEIVED = '',
+  MESSAGE_SENT = '',
+  SYSTEM_MESSAGE = '',
+  JOIN_ROOM = 'JOIN_ROOM',
+}
