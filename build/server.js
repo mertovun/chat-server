@@ -6,8 +6,10 @@ var EventTypes_1 = require("./EventTypes");
 io_1.io.on('connection', function (socket) {
     console.log('connection - id: ' + socket.id + ' joined "/"');
     var chatroom = ChatRoom_1.ChatRoom.new();
-    io_1.io.of('/' + chatroom.id);
-    socket.emit(EventTypes_1.EventTypes.ROOM_CREATED, { nspId: chatroom.id });
+    //io.of('/' + chatroom.id);
+    socket.emit(EventTypes_1.EventTypes.ROOM_CREATED, {
+        nspId: chatroom.id,
+    });
     // socket.emit('greetings', { data: 'helloooo from server' });
     // socket.on('greetings', (data: any) => {
     //   console.log(data);

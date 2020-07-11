@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatRoom = void 0;
 var utils_1 = require("./utils");
 var io_1 = require("./io");
+var DELETE_ABANDONED_ROOM_IN_SECS = 5;
 var ChatRoom = /** @class */ (function () {
     function ChatRoom(nsp, id) {
         var _this = this;
@@ -20,14 +21,12 @@ var ChatRoom = /** @class */ (function () {
             return function (msg) {
                 console.log('disconnected from /' + _this.id + ' [' + msg + ']');
                 delete _this.users[socket.id];
-                if (Object.keys(_this.users).length === 0) {
-                    ChatRoom.delete(_this.id);
-                }
             };
         };
         this.handleCreate = function (socket) { };
         this.handleMessage = function (socket) { };
         this.nsp.on('connection', this.handleConnection);
+        this.roomAbandonedCheck();
     }
     ChatRoom.new = function () {
         var id;
@@ -43,7 +42,23 @@ var ChatRoom = /** @class */ (function () {
         nsp.removeAllListeners();
         delete io_1.io.nsps['/' + id];
         delete ChatRoom.chatRooms[id];
-        console.log('Room /' + id + 'has been removed.');
+        console.log('Room /' + id + ' has been removed.');
+    };
+    ChatRoom.prototype.roomAbandonedCheck = function () {
+        var _this = this;
+        var counter = 0;
+        var interval = setInterval(function () {
+            if (Object.keys(_this.users).length === 0) {
+                counter += 1;
+            }
+            else
+                counter = 0;
+            if (counter >= DELETE_ABANDONED_ROOM_IN_SECS) {
+                clearInterval(interval);
+                ChatRoom.delete(_this.id);
+                console.log(Object.keys(ChatRoom.chatRooms));
+            }
+        }, 1000);
     };
     ChatRoom.chatRooms = {};
     return ChatRoom;

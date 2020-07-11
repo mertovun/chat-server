@@ -2,6 +2,8 @@ import { createRoomID } from './utils';
 import { io } from './io';
 import { Namespace, Socket } from 'socket.io';
 
+const DELETE_ABANDONED_ROOM_IN_SECS = 5;
+
 interface User {
   nickname?: string;
   color?: string;
@@ -11,6 +13,7 @@ export class ChatRoom {
   users: { [id: string]: User } = {};
   private constructor(public nsp: Namespace, public id: string) {
     this.nsp.on('connection', this.handleConnection);
+    this.roomAbandonedCheck();
   }
 
   private handleConnection = (socket: Socket) => {
@@ -24,9 +27,6 @@ export class ChatRoom {
     return (msg: string) => {
       console.log('disconnected from /' + this.id + ' [' + msg + ']');
       delete this.users[socket.id];
-      if (Object.keys(this.users).length === 0) {
-        ChatRoom.delete(this.id);
-      }
     };
   };
   private handleCreate = (socket: Socket) => {};
@@ -49,6 +49,19 @@ export class ChatRoom {
     nsp.removeAllListeners();
     delete io.nsps['/' + id];
     delete ChatRoom.chatRooms[id];
-    console.log('Room /' + id + 'has been removed.');
+    console.log('Room /' + id + ' has been removed.');
+  }
+  private roomAbandonedCheck() {
+    let counter = 0;
+    const interval = setInterval(() => {
+      if (Object.keys(this.users).length === 0) {
+        counter += 1;
+      } else counter = 0;
+      if (counter >= DELETE_ABANDONED_ROOM_IN_SECS) {
+        clearInterval(interval);
+        ChatRoom.delete(this.id);
+        console.log(Object.keys(ChatRoom.chatRooms));
+      }
+    }, 1000);
   }
 }
