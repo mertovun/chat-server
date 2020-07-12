@@ -1,6 +1,8 @@
 import { createRoomID } from './utils';
 import { io } from './io';
 import { Namespace, Socket } from 'socket.io';
+import { EventTypes } from './EventTypes';
+import { SystemMessages } from './SystemMessages';
 
 const DELETE_ABANDONED_ROOM_IN_SECS = 5;
 
@@ -12,16 +14,19 @@ interface User {
 export class ChatRoom {
   users: { [id: string]: User } = {};
   private constructor(public nsp: Namespace, public id: string) {
-    this.nsp.on('connection', this.handleConnection);
+    this.nsp.on('connect', this.handleConnection);
     this.roomAbandonedCheck();
   }
 
   private handleConnection = (socket: Socket) => {
-    console.log(socket.id + ' connected to /' + this.id);
+    console.log(socket.id + ' joined to /' + this.id);
     this.users[socket.id] = {}; // Create user info
+    this.nsp.emit(EventTypes.ROOM_DATA, { users: this.users });
+    socket.emit(EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages.JOIN });
+    socket.on('connect', this.handleJoin);
     socket.on('disconnect', this.handleDisconnect(socket));
     socket.on('create', this.handleCreate);
-    socket.on('message', this.handleMessage);
+    socket.on(EventTypes.MESSAGE, this.handleMessage);
   };
   private handleDisconnect = (socket: Socket) => {
     return (msg: string) => {
@@ -29,8 +34,15 @@ export class ChatRoom {
       delete this.users[socket.id];
     };
   };
+  private handleJoin = (socket: Socket) => {
+    console.log(socket.id + ' joined to /' + this.id);
+  };
   private handleCreate = (socket: Socket) => {};
-  private handleMessage = (socket: Socket) => {};
+  private handleMessage = (msg: string) => {
+    console.log(msg);
+    //TODO: emit MESSAGE_SENT event to the message owner,
+    //TODO: emit MESSAGE_RECEIVED event to the rest
+  };
 
   static chatRooms: { [key: string]: ChatRoom } = {};
 

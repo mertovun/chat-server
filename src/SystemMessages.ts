@@ -1,6 +1,3 @@
-export enum SysMessages {
-  CREATE = '',
-  JOIN = '',
-  JOIN_SELF = '',
-  LEAVE = '',
+export enum SystemMessages {
+  JOIN = 'JOIN',
 }

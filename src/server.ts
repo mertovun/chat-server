@@ -10,8 +10,4 @@ io.on('connection', (socket) => {
   socket.emit(EventTypes.ROOM_CREATED, {
     nspId: chatroom.id,
   });
-  // socket.emit('greetings', { data: 'helloooo from server' });
-  // socket.on('greetings', (data: any) => {
-  //   console.log(data);
-  // });
 });

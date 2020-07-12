@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatRoom = void 0;
 var utils_1 = require("./utils");
 var io_1 = require("./io");
+var EventTypes_1 = require("./EventTypes");
+var SystemMessages_1 = require("./SystemMessages");
 var DELETE_ABANDONED_ROOM_IN_SECS = 5;
 var ChatRoom = /** @class */ (function () {
     function ChatRoom(nsp, id) {
@@ -11,11 +13,14 @@ var ChatRoom = /** @class */ (function () {
         this.id = id;
         this.users = {};
         this.handleConnection = function (socket) {
-            console.log(socket.id + ' connected to /' + _this.id);
+            console.log(socket.id + ' joined to /' + _this.id);
             _this.users[socket.id] = {}; // Create user info
+            _this.nsp.emit(EventTypes_1.EventTypes.ROOM_DATA, { users: _this.users });
+            socket.emit(EventTypes_1.EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages_1.SystemMessages.JOIN });
+            socket.on('connect', _this.handleJoin);
             socket.on('disconnect', _this.handleDisconnect(socket));
             socket.on('create', _this.handleCreate);
-            socket.on('message', _this.handleMessage);
+            socket.on(EventTypes_1.EventTypes.MESSAGE, _this.handleMessage);
         };
         this.handleDisconnect = function (socket) {
             return function (msg) {
@@ -23,9 +28,16 @@ var ChatRoom = /** @class */ (function () {
                 delete _this.users[socket.id];
             };
         };
+        this.handleJoin = function (socket) {
+            console.log(socket.id + ' joined to /' + _this.id);
+        };
         this.handleCreate = function (socket) { };
-        this.handleMessage = function (socket) { };
-        this.nsp.on('connection', this.handleConnection);
+        this.handleMessage = function (msg) {
+            console.log(msg);
+            //TODO: emit MESSAGE_SENT event to the message owner,
+            //TODO: emit MESSAGE_RECEIVED event to the rest
+        };
+        this.nsp.on('connect', this.handleConnection);
         this.roomAbandonedCheck();
     }
     ChatRoom.new = function () {

@@ -1,10 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SysMessages = void 0;
-var SysMessages;
-(function (SysMessages) {
-    SysMessages["CREATE"] = "";
-    SysMessages["JOIN"] = "";
-    SysMessages["JOIN_SELF"] = "";
-    SysMessages["LEAVE"] = "";
-})(SysMessages = exports.SysMessages || (exports.SysMessages = {}));
+exports.SystemMessages = void 0;
+var SystemMessages;
+(function (SystemMessages) {
+    SystemMessages["JOIN"] = "JOIN";
+})(SystemMessages = exports.SystemMessages || (exports.SystemMessages = {}));
