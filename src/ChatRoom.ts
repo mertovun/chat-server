@@ -10,6 +10,11 @@ interface User {
   nickname?: string;
   color?: string;
 }
+interface Message {
+  userId: string;
+  msg: string;
+  timestamp: number;
+}
 
 export class ChatRoom {
   users: { [id: string]: User } = {};
@@ -20,13 +25,14 @@ export class ChatRoom {
 
   private handleConnection = (socket: Socket) => {
     console.log(socket.id + ' joined to /' + this.id);
+    socket.join('room');
     this.users[socket.id] = {}; // Create user info
     this.nsp.emit(EventTypes.ROOM_DATA, { users: this.users });
     socket.emit(EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages.JOIN });
     socket.on('connect', this.handleJoin);
     socket.on('disconnect', this.handleDisconnect(socket));
     socket.on('create', this.handleCreate);
-    socket.on(EventTypes.MESSAGE, this.handleMessage);
+    socket.on(EventTypes.MESSAGE, this.handleMessage(socket));
   };
   private handleDisconnect = (socket: Socket) => {
     return (msg: string) => {
@@ -38,10 +44,21 @@ export class ChatRoom {
     console.log(socket.id + ' joined to /' + this.id);
   };
   private handleCreate = (socket: Socket) => {};
-  private handleMessage = (msg: string) => {
-    console.log(msg);
-    //TODO: emit MESSAGE_SENT event to the message owner,
-    //TODO: emit MESSAGE_RECEIVED event to the rest
+  private handleMessage = (socket: Socket) => {
+    return (msg: string): void => {
+      const timestamp: number = Date.now();
+      const message: Message = {
+        userId: socket.id,
+        msg: msg,
+        timestamp,
+      };
+      console.log(message);
+      //TODO: emit MESSAGE_SENT event to the message owner,
+      this.nsp.to(socket.id).emit(EventTypes.MESSAGE_SENT, message);
+      //TODO: emit MESSAGE_RECEIVED event to the rest
+
+      socket.to('room').emit(EventTypes.MESSAGE_RECEIVED, message);
+    };
   };
 
   static chatRooms: { [key: string]: ChatRoom } = {};

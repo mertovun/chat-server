@@ -14,13 +14,14 @@ var ChatRoom = /** @class */ (function () {
         this.users = {};
         this.handleConnection = function (socket) {
             console.log(socket.id + ' joined to /' + _this.id);
+            socket.join('room');
             _this.users[socket.id] = {}; // Create user info
             _this.nsp.emit(EventTypes_1.EventTypes.ROOM_DATA, { users: _this.users });
             socket.emit(EventTypes_1.EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages_1.SystemMessages.JOIN });
             socket.on('connect', _this.handleJoin);
             socket.on('disconnect', _this.handleDisconnect(socket));
             socket.on('create', _this.handleCreate);
-            socket.on(EventTypes_1.EventTypes.MESSAGE, _this.handleMessage);
+            socket.on(EventTypes_1.EventTypes.MESSAGE, _this.handleMessage(socket));
         };
         this.handleDisconnect = function (socket) {
             return function (msg) {
@@ -32,10 +33,20 @@ var ChatRoom = /** @class */ (function () {
             console.log(socket.id + ' joined to /' + _this.id);
         };
         this.handleCreate = function (socket) { };
-        this.handleMessage = function (msg) {
-            console.log(msg);
-            //TODO: emit MESSAGE_SENT event to the message owner,
-            //TODO: emit MESSAGE_RECEIVED event to the rest
+        this.handleMessage = function (socket) {
+            return function (msg) {
+                var timestamp = Date.now();
+                var message = {
+                    userId: socket.id,
+                    msg: msg,
+                    timestamp: timestamp,
+                };
+                console.log(message);
+                //TODO: emit MESSAGE_SENT event to the message owner,
+                _this.nsp.to(socket.id).emit(EventTypes_1.EventTypes.MESSAGE_SENT, message);
+                //TODO: emit MESSAGE_RECEIVED event to the rest
+                socket.to('room').emit(EventTypes_1.EventTypes.MESSAGE_RECEIVED, message);
+            };
         };
         this.nsp.on('connect', this.handleConnection);
         this.roomAbandonedCheck();
