@@ -1,3 +1,5 @@
 export enum SystemMessages {
-  JOIN = 'JOIN',
+  JOINED = 'JOINED',
+  LEFT = 'LEFT',
+  WELCOME = 'WELCOME',
 }

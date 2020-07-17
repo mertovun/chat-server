@@ -15,23 +15,34 @@ var ChatRoom = /** @class */ (function () {
         this.handleConnection = function (socket) {
             console.log(socket.id + ' joined to /' + _this.id);
             socket.join('room');
-            _this.users[socket.id] = {}; // Create user info
+            _this.users[socket.id] = {
+                nickname: 'Anonymous_' + socket.id.substr(socket.id.length - 4),
+                color: utils_1.createColor(),
+            }; // Create user info
             _this.nsp.emit(EventTypes_1.EventTypes.ROOM_DATA, { users: _this.users });
-            socket.emit(EventTypes_1.EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages_1.SystemMessages.JOIN });
-            socket.on('connect', _this.handleJoin);
+            _this.nsp.emit(EventTypes_1.EventTypes.SYSTEM_MESSAGE, {
+                type: SystemMessages_1.SystemMessages.JOINED,
+                userId: socket.id,
+            });
+            //socket.on('connect', this.handleJoin);
             socket.on('disconnect', _this.handleDisconnect(socket));
             socket.on('create', _this.handleCreate);
             socket.on(EventTypes_1.EventTypes.MESSAGE, _this.handleMessage(socket));
         };
         this.handleDisconnect = function (socket) {
             return function (msg) {
+                _this.nsp.emit(EventTypes_1.EventTypes.ROOM_DATA, { users: _this.users });
+                _this.nsp.emit(EventTypes_1.EventTypes.SYSTEM_MESSAGE, {
+                    type: SystemMessages_1.SystemMessages.LEFT,
+                    userId: socket.id,
+                });
                 console.log('disconnected from /' + _this.id + ' [' + msg + ']');
                 delete _this.users[socket.id];
             };
         };
-        this.handleJoin = function (socket) {
-            console.log(socket.id + ' joined to /' + _this.id);
-        };
+        // private handleJoin = (socket: Socket) => {
+        //   console.log(socket.id + ' joined to /' + this.id);
+        // };
         this.handleCreate = function (socket) { };
         this.handleMessage = function (socket) {
             return function (msg) {

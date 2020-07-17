@@ -1,4 +1,4 @@
-import { createRoomID } from './utils';
+import { createRoomID, createColor } from './utils';
 import { io } from './io';
 import { Namespace, Socket } from 'socket.io';
 import { EventTypes } from './EventTypes';
@@ -7,13 +7,18 @@ import { SystemMessages } from './SystemMessages';
 const DELETE_ABANDONED_ROOM_IN_SECS = 5;
 
 interface User {
-  nickname?: string;
-  color?: string;
+  nickname: string;
+  color: string;
 }
 interface Message {
   userId: string;
   msg: string;
   timestamp: number;
+}
+
+interface SysMessage {
+  type: SystemMessages;
+  userId?: string;
 }
 
 export class ChatRoom {
@@ -26,23 +31,34 @@ export class ChatRoom {
   private handleConnection = (socket: Socket) => {
     console.log(socket.id + ' joined to /' + this.id);
     socket.join('room');
-    this.users[socket.id] = {}; // Create user info
+    this.users[socket.id] = {
+      nickname: 'Anonymous_' + socket.id.substr(socket.id.length - 4),
+      color: createColor(),
+    }; // Create user info
     this.nsp.emit(EventTypes.ROOM_DATA, { users: this.users });
-    socket.emit(EventTypes.SYSTEM_MESSAGE, { msg: SystemMessages.JOIN });
-    socket.on('connect', this.handleJoin);
+    this.nsp.emit(EventTypes.SYSTEM_MESSAGE, {
+      type: SystemMessages.JOINED,
+      userId: socket.id,
+    });
+    //socket.on('connect', this.handleJoin);
     socket.on('disconnect', this.handleDisconnect(socket));
     socket.on('create', this.handleCreate);
     socket.on(EventTypes.MESSAGE, this.handleMessage(socket));
   };
   private handleDisconnect = (socket: Socket) => {
     return (msg: string) => {
+      this.nsp.emit(EventTypes.ROOM_DATA, { users: this.users });
+      this.nsp.emit(EventTypes.SYSTEM_MESSAGE, {
+        type: SystemMessages.LEFT,
+        userId: socket.id,
+      });
       console.log('disconnected from /' + this.id + ' [' + msg + ']');
       delete this.users[socket.id];
     };
   };
-  private handleJoin = (socket: Socket) => {
-    console.log(socket.id + ' joined to /' + this.id);
-  };
+  // private handleJoin = (socket: Socket) => {
+  //   console.log(socket.id + ' joined to /' + this.id);
+  // };
   private handleCreate = (socket: Socket) => {};
   private handleMessage = (socket: Socket) => {
     return (msg: string): void => {
